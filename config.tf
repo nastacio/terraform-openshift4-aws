@@ -40,7 +40,14 @@ EOF
 
 variable "openshift_pull_secret" {
   type = string
-  description = "File containing pull secret - get it from https://cloud.redhat.com/openshift/install/pull-secret"
+  description = "Red Hat OCP pull secret - get it from https://cloud.redhat.com/openshift/install/pull-secret"
+}
+
+variable "infra_id" {
+  type        = string
+  default     = ""
+  description = "Subset of output of openshift-install create manifests."
+  nullable    = true
 }
 
 variable "use_ipv4" {

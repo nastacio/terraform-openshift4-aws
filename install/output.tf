@@ -23,5 +23,5 @@ output "worker_ign_64" {
 # }
 
 output "infraID" {
-    value =  data.local_file.infrastructureID.content
+    value =  data.external.extractInfrastructureID.result.InfraID
 }

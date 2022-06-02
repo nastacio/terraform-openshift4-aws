@@ -1,6 +1,6 @@
 cluster_name = "ocp4"
 base_domain = "example.com"
-openshift_pull_secret = "./openshift_pull_secret.json"
+openshift_pull_secret = "{\"auths\":{\"cloud.openshift.com\":{\"auth\":..."
 openshift_version = "4.6.28"
 
 aws_extra_tags = {

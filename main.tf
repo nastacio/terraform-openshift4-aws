@@ -5,7 +5,7 @@ locals {
     },
     var.aws_extra_tags,
   )
-  openshift_installer_url = "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/${var.openshift_version}/"
+  openshift_installer_url = "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/${var.openshift_version}"
 }
 
 provider "aws" {
@@ -124,6 +124,7 @@ module "installer" {
   master_count = length(local.aws_azs)
   infra_count = var.infra_count
   openshift_pull_secret = var.openshift_pull_secret
+  infra_id = var.infra_id
   openshift_installer_url = local.openshift_installer_url
   aws_worker_root_volume_iops = var.aws_worker_root_volume_iops
   aws_worker_root_volume_size = var.aws_worker_root_volume_size

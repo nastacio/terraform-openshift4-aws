@@ -109,7 +109,7 @@ This project installs the OpenShift 4 in several stages where each stage automat
 ```
 cluster_name = "ocp4"
 base_domain = "example.com"
-openshift_pull_secret = "./openshift_pull_secret.json"
+openshift_pull_secret = "{\"auths\":{\"cloud.openshift.com\":{\"auth\":..."
 openshift_version = "4.6.28"
 
 aws_extra_tags = {
@@ -123,7 +123,7 @@ aws_publish_strategy = "External"
 |----------------|------------|--------------|
 | `cluster_name` | yes  | The name of the OpenShift cluster you will install     |
 | `base_domain`  | yes | The domain that has been created in Route53 public hosted zone |
-| `openshift_pull_secret` | no | The value refers to a file name that contain downloaded pull secret from https://cloud.redhat.com/openshift/pull-secret; the default name is `openshift_pull_secret.json` |
+| `openshift_pull_secret` | no | The value is the downloaded pull secret from https://cloud.redhat.com/openshift/pull-secret |
 | `openshift_version` | yes | The openshift version to be installed.  |
 | `aws_region`   | yes  | AWS region that the VPC will be created in.  By default, uses `us-east-2`.  Note that for an HA installation, the AWS selected region should have at least 3 availability zones. |
 | `aws_extra_tags`  | no  | AWS tag to identify a resource for example owner:myname     |
@@ -219,7 +219,7 @@ Once the mirror registry is created - use the terraform.tfvars similar to below:
 ```
 cluster_name = "ocp4"
 base_domain = "example.com"
-openshift_pull_secret = "./openshift_pull_secret.json"
+openshift_pull_secret = "${LOCAL_SECRET_JSON//\"/\\\"}
 openshift_installer_url = "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.6.28"
 
 aws_access_key_id = "AAAA"

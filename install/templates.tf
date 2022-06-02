@@ -17,6 +17,7 @@
 # }
 
 locals {
+  infra_id="${data.external.extractInfrastructureID.result.InfraID}"
   zone_infra_replicas = [for idx in range(length(var.aws_worker_availability_zones)) : floor(var.infra_count / length(var.aws_worker_availability_zones)) + (idx + 1 > (var.infra_count % length(var.aws_worker_availability_zones)) ? 0 : 1)]
 }
 
@@ -61,7 +62,7 @@ networking:
 platform:
   aws:
     region: ${var.aws_region}
-pullSecret: '${file(var.openshift_pull_secret)}'
+pullSecret: '${var.openshift_pull_secret}'
 sshKey: '${local.public_ssh_key}'
 %{if var.airgapped["enabled"]}imageContentSources:
 - mirrors:
@@ -111,23 +112,23 @@ metadata:
   labels:
     machine.openshift.io/cluster-api-machine-role: worker
     machine.openshift.io/cluster-api-machine-type: worker
-    machine.openshift.io/cluster-api-cluster: ${data.local_file.infrastructureID.content}
-  name: ${data.local_file.infrastructureID.content}-worker-${var.aws_worker_availability_zones[count.index]}
+    machine.openshift.io/cluster-api-cluster: ${local.infra_id}
+  name: ${local.infra_id}-worker-${var.aws_worker_availability_zones[count.index]}
   namespace: openshift-machine-api
 spec:
   replicas: 1
   selector:
     matchLabels:
-      machine.openshift.io/cluster-api-cluster: ${data.local_file.infrastructureID.content}
-      machine.openshift.io/cluster-api-machineset: ${data.local_file.infrastructureID.content}-worker-${var.aws_worker_availability_zones[count.index]}
+      machine.openshift.io/cluster-api-cluster: ${local.infra_id}
+      machine.openshift.io/cluster-api-machineset: ${local.infra_id}-worker-${var.aws_worker_availability_zones[count.index]}
   template:
     metadata:
       creationTimestamp: null
       labels:
-        machine.openshift.io/cluster-api-cluster: ${data.local_file.infrastructureID.content}
+        machine.openshift.io/cluster-api-cluster: ${local.infra_id}
         machine.openshift.io/cluster-api-machine-role: worker
         machine.openshift.io/cluster-api-machine-type: worker
-        machine.openshift.io/cluster-api-machineset: ${data.local_file.infrastructureID.content}-worker-${var.aws_worker_availability_zones[count.index]}
+        machine.openshift.io/cluster-api-machineset: ${local.infra_id}-worker-${var.aws_worker_availability_zones[count.index]}
     spec:
       metadata:
         creationTimestamp: null
@@ -148,7 +149,7 @@ spec:
             name: aws-cloud-credentials
           deviceIndex: 0
           iamInstanceProfile:
-            id: ${data.local_file.infrastructureID.content}-worker-profile
+            id: ${local.infra_id}-worker-profile
           instanceType: ${var.aws_worker_instance_type}
           kind: AWSMachineProviderConfig
           metadata:
@@ -160,43 +161,18 @@ spec:
           - filters:
             - name: tag:Name
               values:
-              - ${data.local_file.infrastructureID.content}-worker-sg
+              - ${local.infra_id}-worker-sg
           subnet:
             filters:
             - name: subnet-id
               values:
               - ${var.aws_private_subnets[count.index]}
           tags:
-          - name: kubernetes.io/cluster/${data.local_file.infrastructureID.content}
+          - name: kubernetes.io/cluster/${local.infra_id}
             value: owned
           userDataSecret:
             name: worker-user-data
 EOF
-}
-
-resource "null_resource" "extractInfrastructureID" {
-  depends_on = [
-    null_resource.generate_manifests
-  ]
-
-  provisioner "local-exec" {
-    when    = create
-    command = "cat ${path.root}/installer-files/temp/.openshift_install_state.json | jq -r '.\"*installconfig.ClusterID\".InfraID' | tr -d '\n' > ${path.root}/installer-files/infraID"
-  }
-
-  provisioner "local-exec" {
-    when    = destroy
-    command = "rm -rf ${path.root}/installer-files/infraID"
-  }
-}
-
-
-data "local_file" "infrastructureID" {
-  depends_on = [
-    null_resource.extractInfrastructureID
-  ]
-  filename        =  "${path.root}/installer-files/infraID"
-
 }
 
 resource "local_file" "airgapped_registry_upgrades" {
@@ -264,23 +240,23 @@ metadata:
   labels:
     machine.openshift.io/cluster-api-machine-role: infra
     machine.openshift.io/cluster-api-machine-type: infra
-    machine.openshift.io/cluster-api-cluster: ${data.local_file.infrastructureID.content}
-  name: ${data.local_file.infrastructureID.content}-infra-${var.aws_worker_availability_zones[count.index]}
+    machine.openshift.io/cluster-api-cluster: ${local.infra_id}
+  name: ${local.infra_id}-infra-${var.aws_worker_availability_zones[count.index]}
   namespace: openshift-machine-api
 spec:
   replicas: ${local.zone_infra_replicas[count.index]}
   selector:
     matchLabels:
-      machine.openshift.io/cluster-api-cluster: ${data.local_file.infrastructureID.content}
-      machine.openshift.io/cluster-api-machineset: ${data.local_file.infrastructureID.content}-infra-${var.aws_worker_availability_zones[count.index]}
+      machine.openshift.io/cluster-api-cluster: ${local.infra_id}
+      machine.openshift.io/cluster-api-machineset: ${local.infra_id}-infra-${var.aws_worker_availability_zones[count.index]}
   template:
     metadata:
       creationTimestamp: null
       labels:
-        machine.openshift.io/cluster-api-cluster: ${data.local_file.infrastructureID.content}
+        machine.openshift.io/cluster-api-cluster: ${local.infra_id}
         machine.openshift.io/cluster-api-machine-role: infra
         machine.openshift.io/cluster-api-machine-type: infra
-        machine.openshift.io/cluster-api-machineset: ${data.local_file.infrastructureID.content}-infra-${var.aws_worker_availability_zones[count.index]}
+        machine.openshift.io/cluster-api-machineset: ${local.infra_id}-infra-${var.aws_worker_availability_zones[count.index]}
     spec:
       metadata:
         creationTimestamp: null
@@ -303,7 +279,7 @@ spec:
             name: aws-cloud-credentials
           deviceIndex: 0
           iamInstanceProfile:
-            id: ${data.local_file.infrastructureID.content}-worker-profile
+            id: ${local.infra_id}-worker-profile
           instanceType: ${var.aws_infra_instance_type}
           kind: AWSMachineProviderConfig
           metadata:
@@ -315,7 +291,7 @@ spec:
           - filters:
             - name: tag:Name
               values:
-              - ${data.local_file.infrastructureID.content}-worker-sg
+              - ${local.infra_id}-worker-sg
           subnet:
             filters:
             %{if var.aws_private_subnets != null}- name: subnet-id
@@ -323,9 +299,9 @@ spec:
               - ${var.aws_private_subnets[count.index]}%{endif}
             %{if var.aws_private_subnets == null}- name: tag:Name
               values:
-              - ${data.local_file.infrastructureID.content}-private-${var.aws_worker_availability_zones[count.index]}%{endif}
+              - ${local.infra_id}-private-${var.aws_worker_availability_zones[count.index]}%{endif}
           tags:
-          - name: kubernetes.io/cluster/${data.local_file.infrastructureID.content}
+          - name: kubernetes.io/cluster/${local.infra_id}
             value: owned
           userDataSecret:
             name: worker-user-data
@@ -586,4 +562,3 @@ resource "local_file" "configure-ingress-job" {
     null_resource.generate_manifests,
   ]
 }
-

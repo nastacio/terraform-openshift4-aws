@@ -1,63 +1,11 @@
-resource "null_resource" "openshift_installer" {
-  provisioner "local-exec" {
-    command = <<EOF
-case $(uname -s) in
-  Linux)
-    wget -r -l1 -np -nd ${var.openshift_installer_url} -q -P ${path.root}/installer-files/ -A 'openshift-install-linux-4*.tar.gz'
-    ;;
-  Darwin)
-    wget -r -l1 -np -nd ${var.openshift_installer_url} -q -P ${path.root}/installer-files/ -A 'openshift-install-mac-4*.tar.gz'
-    ;;
-  *) exit 1
-    ;;
-esac
-EOF
-  }
-
-  provisioner "local-exec" {
-    command = "tar zxvf ${path.root}/installer-files//openshift-install-*-4*.tar.gz -C ${path.root}/installer-files/"
-  }
-
-  provisioner "local-exec" {
-    command = "rm -f ${path.root}/installer-files//openshift-install-*-4*.tar.gz ${path.root}/installer-files//robots*.txt* ${path.root}/installer-files//README.md"
-  }
-}
-
-resource "null_resource" "openshift_client" {
-  provisioner "local-exec" {
-    command = <<EOF
-case $(uname -s) in
-  Linux)
-    wget -r -l1 -np -nd ${var.openshift_installer_url} -q -P ${path.root}/installer-files/ -A 'openshift-client-linux-4*.tar.gz'
-    ;;
-  Darwin)
-    wget -r -l1 -np -nd ${var.openshift_installer_url} -q -P ${path.root}/installer-files/ -A 'openshift-client-mac-4*.tar.gz'
-    ;;
-  *)
-    exit 1
-    ;;
-esac
-EOF
-  }
-
-  provisioner "local-exec" {
-    command = "tar zxvf ${path.root}/installer-files//openshift-client-*-4*.tar.gz -C ${path.root}/installer-files/"
-  }
-
-  provisioner "local-exec" {
-    command = "rm -f ${path.root}/installer-files//openshift-client-*-4*.tar.gz ${path.root}/installer-files//robots*.txt* ${path.root}/installer-files//README.md"
-  }
-}
-
 resource "null_resource" "generate_manifests" {
   triggers = {
     install_config =  data.template_file.install_config_yaml.rendered
   }
 
   depends_on = [
-    local_file.install_config,
+    local_file.install_config
     # null_resource.aws_credentials,
-    null_resource.openshift_installer,
   ]
 
   provisioner "local-exec" {
@@ -73,6 +21,11 @@ resource "null_resource" "generate_manifests" {
   }
 
   provisioner "local-exec" {
+    command = "${path.module}/get_openshift_cli.sh install ${path.root}/installer-files ${var.openshift_installer_url}"
+  }
+
+  provisioner "local-exec" {
+    when    = create
     command = "${path.root}/installer-files//openshift-install --dir=${path.root}/installer-files//temp create manifests"
   }
 }
@@ -140,13 +93,17 @@ resource "null_resource" "generate_ignition_config" {
 }
 
 resource "null_resource" "delete_aws_resources" {
+  triggers = {
+    infra_id = data.external.extractInfrastructureID.result.InfraID
+  }
+
   depends_on = [
     null_resource.cleanup
   ]
 
   provisioner "local-exec" {
     when    = destroy
-    command = "${path.module}/aws_cleanup.sh"
+    command = "${path.module}/aws_cleanup.sh ${self.triggers.infra_id}"
     #command = "${path.root}/installer-files//openshift-install --dir=${path.root}/installer-files/temp destroy cluster"
   }
 
@@ -202,6 +159,37 @@ data "local_file" "worker_ign" {
   filename =  "${path.root}/installer-files//temp/worker.ign"
 }
 
+data "local_file" "openshift_install_state_json" {
+  count = var.infra_id == "" ? 1 : 0
+ 
+  depends_on = [
+    null_resource.generate_manifests
+  ]
+
+  filename = "${path.root}/installer-files/temp/.openshift_install_state.json"
+}
+
+#
+# Writes the "ClusterId" element of openshift_install_state.json into the result.
+#
+# It gives precedence to the variable over the content of the file in the disk.
+# That variable should be added to the tf.vars file *after* the first invocation
+# of "terraform apply" in case you need to delete the temporary "installer-files"
+# folder, such as when relying on a Cloud Service 
+#
+data "external" "extractInfrastructureID" {
+  depends_on = [
+    null_resource.generate_manifests
+  ]
+
+  program = ["bash", "${path.module}/get_install_state.sh" ]
+
+  query = {
+      infra_id = var.infra_id
+      openshift_install_state_file = var.infra_id != "" ? "" : data.local_file.openshift_install_state_json[0].filename
+  }
+}
+
 resource "null_resource" "get_auth_config" {
   depends_on = [null_resource.generate_ignition_config]
   provisioner "local-exec" {
@@ -210,6 +198,6 @@ resource "null_resource" "get_auth_config" {
   }
   provisioner "local-exec" {
     when    = destroy
-    command = "rm ${path.root}/kubeconfig ${path.root}/kubeadmin-password "
+    command = "rm -f ${path.root}/kubeconfig ${path.root}/kubeadmin-password "
   }
 }

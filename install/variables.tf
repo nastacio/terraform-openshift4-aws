@@ -96,16 +96,15 @@ EOF
 
 }
 
-
 variable "openshift_pull_secret" {
   type        = string
-  default     = "./openshift_pull_secret.json"
+  nullable    = false
 }
 
 variable "openshift_installer_url" {
   type        = string
   description = "The URL to download OpenShift installer."
-  default     = "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/"
+  default     = "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest"
 }
 
 # variable "aws_access_key_id" {
@@ -160,4 +159,9 @@ variable "proxy_config" {
   default = {
     enabled = false
   }
+}
+
+variable "infra_id" {
+  type        = string
+  nullable    = true
 }
