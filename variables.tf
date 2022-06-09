@@ -49,7 +49,7 @@ variable "bastion_hostname" {
   nullable    = false
   type        = string
 }
-variable "quay_hostname" {
+variable "registry_hostname" {
   description = "Hostname for the quay server."
   nullable    = false
   type        = string

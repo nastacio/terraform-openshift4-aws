@@ -2,14 +2,12 @@
 
 set -x
 
-: "${quay_hostname:=${1}}"
-: "${registry_user:=${2}}"
-: "${registry_pwd:=${3}}"
+: "${registry_url:=${1}}"
+: "${registry_username:=${2}}"
+: "${registry_password:=${3}}"
 : "${rhel_pull_secret:=${4}}"
 
-: "${quay_url:=localhost:8443}"
-
-: "${OCP_RELEASE:=4.10.12}"
+: "${OCP_RELEASE:=4.10.15}"
 
 
 #
@@ -57,20 +55,19 @@ function clone_ocp() {
     result=0
 
     echo "INFO: Cloning OCP images"
-    ir_install_path=/data/quay/install
     quay_root_dir=/data/quay/images
 
     running_status=0
     mirror_pull_secret=pull-secret.txt \
     && podman login --authfile "${mirror_pull_secret}" \
-        -u "${registry_user}" \
-        -p "${registry_pwd}" \
-        "${quay_url}" \
+        -u "${registry_username}" \
+        -p "${registry_password}" \
+        "${registry_url}" \
         --tls-verify=false \
     && echo "INFO: Registry is working" \
     || result=1
 
-    export LOCAL_REGISTRY="${quay_hostname}"
+    export LOCAL_REGISTRY="${registry_url/https:\/\//}"
     export LOCAL_REPOSITORY=ocp4/openshift4
     export PRODUCT_REPO=openshift-release-dev
     # https://console.redhat.com/openshift/install/pull-secret

@@ -232,6 +232,19 @@ resource "aws_route53_record" "bastion-dns" {
 
 
 #
+#
+#
+resource "aws_route53_record" "registry-dns" {
+  allow_overwrite = true
+  zone_id         = data.aws_route53_zone.dns_zone.zone_id
+  name            = var.registry_hostname
+  type            = "A"
+  ttl             = "300"
+  records         = [aws_instance.registry_instance.private_ip]
+}
+
+
+#
 # Create registry instance in the VPC
 #
 resource "aws_network_interface" "lab_registry_nic" {
@@ -454,14 +467,14 @@ resource "null_resource" "configure_registry" {
   provisioner "remote-exec" {
     inline = [
       "chmod +x /tmp/install-quay.sh",
-      "sudo /tmp/install-quay.sh ${var.quay_hostname} ${var.registry_username} ${var.registry_password} | grep -v ${var.registry_password} > /tmp/install-quay.txt 2>&1",
+      "sudo /tmp/install-quay.sh ${var.registry_hostname} ${var.registry_username} ${var.registry_password} | grep -v ${var.registry_password} > /tmp/install-quay.txt 2>&1",
     ]
   }
 
   provisioner "remote-exec" {
     inline = [
       "chmod +x /tmp/clone-ocp-images.sh",
-      "sudo /tmp/clone-ocp-images.sh ${var.quay_hostname} ${var.registry_username} ${var.registry_password} ${var.rhel_pull_secret} | grep -v username | grep -v password > /tmp/clone-ocp-images.txt 2>&1",
+      "sudo /tmp/clone-ocp-images.sh ${var.registry_hostname} ${var.registry_username} ${var.registry_password} ${var.rhel_pull_secret} | grep -v username | grep -v password > /tmp/clone-ocp-images.txt 2>&1",
     ]
   }
 }
