@@ -4,6 +4,8 @@ data "aws_vpc_endpoint_service" "ec2" {
 }
 
 resource "aws_vpc_endpoint" "private_ec2" {
+  count = var.private_subnets == null ? 1 : 0
+
   vpc_id       =  data.aws_vpc.cluster_vpc.id
   service_name =  data.aws_vpc_endpoint_service.ec2.service_name
   vpc_endpoint_type = "Interface"
