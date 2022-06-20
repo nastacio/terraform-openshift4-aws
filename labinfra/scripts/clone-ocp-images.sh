@@ -6,8 +6,7 @@ set -x
 : "${registry_username:=${2}}"
 : "${registry_password:=${3}}"
 : "${rhel_pull_secret:=${4}}"
-
-: "${OCP_RELEASE:=4.10.15}"
+: "${openshift_version:=${5}}"
 
 
 #
@@ -62,7 +61,7 @@ function clone_ocp() {
     && podman login --authfile "${mirror_pull_secret}" \
         -u "${registry_username}" \
         -p "${registry_password}" \
-        "${registry_url}" \
+        "${registry_url}:8443" \
         --tls-verify=false \
     && echo "INFO: Registry is working" \
     || result=1
@@ -85,14 +84,14 @@ function clone_ocp() {
     && cat "${LOCAL_SECRET_JSON}" \
     && echo "INFO: Reviewing images..." \
     && oc adm release mirror -a ${LOCAL_SECRET_JSON}  \
-        --from=quay.io/${PRODUCT_REPO}/${RELEASE_NAME}:${OCP_RELEASE}-${ARCHITECTURE} \
+        --from=quay.io/${PRODUCT_REPO}/${RELEASE_NAME}:${openshift_version}-${ARCHITECTURE} \
          --to="${LOCAL_REGISTRY}/${LOCAL_REPOSITORY}" \
-         --to-release-image="${LOCAL_REGISTRY}/${LOCAL_REPOSITORY}:${OCP_RELEASE}-${ARCHITECTURE}" \
+         --to-release-image="${LOCAL_REGISTRY}/${LOCAL_REPOSITORY}:${openshift_version}-${ARCHITECTURE}" \
          --dry-run \
     && echo "INFO: Mirroring images..." \
     && oc adm release mirror \
             -a ${LOCAL_SECRET_JSON} \
-            --to-dir=${REMOVABLE_MEDIA_PATH}/mirror quay.io/${PRODUCT_REPO}/${RELEASE_NAME}:${OCP_RELEASE}-${ARCHITECTURE} \
+            --to-dir=${REMOVABLE_MEDIA_PATH}/mirror quay.io/${PRODUCT_REPO}/${RELEASE_NAME}:${openshift_version}-${ARCHITECTURE} \
     && echo "INFO: Mirrored images successfully." \
     || result=1
 

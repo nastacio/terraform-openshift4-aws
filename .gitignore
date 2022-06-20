@@ -1,7 +1,10 @@
 terraform.tfstate.backup
 .terraform.*
 .terraform/*
-~/tmp/sdlc1-cpbu.tfstate
 terraform.tfstate
-temp/.openshift_install.log
-temp/install-config copy.yaml
+~/tmp/*
+temp/*
+installer-files/*
+
+kubeadmin-password
+kubeconfig

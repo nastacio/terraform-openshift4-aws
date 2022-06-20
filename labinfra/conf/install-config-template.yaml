@@ -38,8 +38,8 @@ sshKey: '%%SSH_KEY%%'
 publish: External
 imageContentSources:
 - mirrors:
-  - sdlc2-quay.%%NETWORK_DOMAIN%%:8443/ocp4/openshift4
+  - "%%CLUSTER_NAME%%-quay.%%NETWORK_DOMAIN%%:8443/ocp4/openshift4"
   source: quay.io/openshift-release-dev/ocp-release
 - mirrors:
-  - sdlc2-quay.%%NETWORK_DOMAIN%%:8443/ocp4/openshift4
+  - "%%CLUSTER_NAME%%-quay.%%NETWORK_DOMAIN%%:8443/ocp4/openshift4"
   source: quay.io/openshift-release-dev/ocp-v4.0-art-dev

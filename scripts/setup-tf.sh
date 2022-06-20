@@ -3,7 +3,7 @@ yum install -y yum-utils \
 && yum -y install terraform
 
 
-openshift_install_version=4.10.12
+openshift_install_version=4.10.15
 platform=mac
 curl -sL https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/${openshift_install_version}/openshift-install-${platform}.tar.gz | tar xzf - -C /usr/local/bin  && openshift-install version 
 

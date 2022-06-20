@@ -1,3 +1,9 @@
+variable "environment_name" {
+  description = "Basic name of the environment. An internal concept for this TF module."
+  nullable    = false
+  type        = string
+}
+
 variable "base_domain" {
   type = string
 
@@ -10,11 +16,7 @@ Example: `openshift.example.com`.
 Note: This field MUST be set manually prior to creating the cluster.
 This applies only to cloud platforms.
 EOF
-}
-variable "environment_name" {
-  description = "Basic name of the environment. An internal concept for this TF module."
-  nullable    = false
-  type        = string
+
 }
 variable "cert_owner" {
   description = "Email of the account owner at LetsEncrypt."
@@ -67,16 +69,42 @@ variable "route_53_zone_id" {
   nullable    = false
   type        = string
 }
+variable "openshift_version" {
+  type    = string
+  default = "4.8.38"
+}
 variable "ocp_public_subnet_cidr_a" {
-  description = "CIDR for the OCP Public Subnet"
-  default     = "10.0.16.0/20"
+    description = "CIDR for the OCP Public Subnet"
+    default = "10.0.16.0/20"
 }
 
 variable "ocp_private_subnet_cidr_a" {
-  description = "CIDR for the OCP Private Subnet"
-  default     = "10.0.128.0/20"
+    description = "CIDR for the OCP Private Subnet"
+    default = "10.0.128.0/20"
 }
-variable "openshift_version" {
-  type    = string
-  default = "4.6.28"
+
+variable "aws_region" {
+  type        = string
+  description = "The target AWS region for the cluster."
+}
+variable "availability_zones" {
+  type        = list(string)
+  description = "The availability zones in which to provision subnets."
+}
+
+variable "airgap" {
+  type = bool
+  default = false
+}
+
+variable "public_subnet_ids" {
+  type        = list(string)
+}
+
+variable "private_subnet_ids" {
+  type        = list(string)
+}
+
+variable "vpc_id" {
+  type        = string
 }
