@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# https://cloud.redhat.com/blog/deploy-openshift-to-existing-vpc-on-aws
+# https://docs.openshift.com/container-platform/4.10/installing/installing_aws/installing-aws-customizations.html
+
 set -x
 
 : "${aws_region:=${1}}"

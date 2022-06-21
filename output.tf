@@ -22,8 +22,16 @@ output "public_subnet_ids" {
   value = module.vpc.public_subnet_ids
 }
 
+output "az_to_public_subnet_id" {
+  value = module.vpc.az_to_public_subnet_id
+}
+
 output "private_subnet_ids" {
   value = module.vpc.private_subnet_ids
+}
+
+output "az_to_private_subnet_id" {
+  value = module.vpc.az_to_private_subnet_id
 }
 
 output "registry_url" {

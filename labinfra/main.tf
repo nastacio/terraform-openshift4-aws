@@ -160,6 +160,14 @@ resource "aws_security_group" "lab_registry_tls_sg" {
     cidr_blocks = [
       "0.0.0.0/0"
     ]
+    from_port = 443
+    to_port   = 443
+    protocol  = "tcp"
+  }
+  ingress {
+    cidr_blocks = [
+      "0.0.0.0/0"
+    ]
     from_port = 8443
     to_port   = 8443
     protocol  = "tcp"
@@ -250,7 +258,7 @@ resource "aws_instance" "registry_instance" {
     volume_size = 256
     volume_type = "gp2"
   }
-  subnet_id = local.public_lab_subnet_id
+  subnet_id = local.private_lab_subnet_id
   vpc_security_group_ids = [
     aws_security_group.lab_ssh_sg.id,
     aws_security_group.lab_registry_tls_sg.id
