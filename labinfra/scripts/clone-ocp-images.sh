@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# https://www.youtube.com/watch?v=j5e4OT71N0A
+
 set -x
 
 : "${registry_url:=${1}}"
@@ -61,10 +63,13 @@ function clone_ocp() {
     && podman login --authfile "${mirror_pull_secret}" \
         -u "${registry_username}" \
         -p "${registry_password}" \
-        "${registry_url}:8443" \
+        "${registry_url}:443" \
         --tls-verify=false \
     && echo "INFO: Registry is working" \
-    || result=1
+    || {
+        echo "ERROR: Registry is not working" \
+        return 1
+    }
 
     export LOCAL_REGISTRY="${registry_url/https:\/\//}"
     export LOCAL_REPOSITORY=ocp4/openshift4
@@ -78,27 +83,33 @@ function clone_ocp() {
     && mkdir -p "${quay_images_dir}" \
     && export REMOVABLE_MEDIA_PATH="${quay_images_dir}" \
     && echo "INFO: Generating pull secret." \
-    && echo "${rhel_pull_secret}" > /tmp/a.txt \
-    && echo "${rhel_pull_secret}" | sed "s|'|\"|g" | jq ".auths += $(cat "${mirror_pull_secret}").auths" > "${LOCAL_SECRET_JSON}" \
+    && echo "${rhel_pull_secret}" | sed "s|'|\"|g" | jq -M ".auths += $(cat "${mirror_pull_secret}").auths" > "${LOCAL_SECRET_JSON}" \
     && chmod 600 "${LOCAL_SECRET_JSON}" \
     && cat "${LOCAL_SECRET_JSON}" \
     && echo "INFO: Reviewing images..." \
     && oc adm release mirror -a ${LOCAL_SECRET_JSON}  \
-        --from=quay.io/${PRODUCT_REPO}/${RELEASE_NAME}:${openshift_version}-${ARCHITECTURE} \
-         --to="${LOCAL_REGISTRY}/${LOCAL_REPOSITORY}" \
-         --to-release-image="${LOCAL_REGISTRY}/${LOCAL_REPOSITORY}:${openshift_version}-${ARCHITECTURE}" \
-         --dry-run \
+            --from=quay.io/${PRODUCT_REPO}/${RELEASE_NAME}:${openshift_version}-${ARCHITECTURE} \
+            --to="${LOCAL_REGISTRY}/${LOCAL_REPOSITORY}" \
+            --to-release-image="${LOCAL_REGISTRY}/${LOCAL_REPOSITORY}:${openshift_version}-${ARCHITECTURE}" \
+            --dry-run \
     && echo "INFO: Mirroring images..." \
     && oc adm release mirror \
+            --insecure=true \
             -a ${LOCAL_SECRET_JSON} \
-            --to-dir=${REMOVABLE_MEDIA_PATH}/mirror quay.io/${PRODUCT_REPO}/${RELEASE_NAME}:${openshift_version}-${ARCHITECTURE} \
+            --from=quay.io/${PRODUCT_REPO}/${RELEASE_NAME}:${openshift_version}-${ARCHITECTURE} \
+            --to="${LOCAL_REGISTRY}/${LOCAL_REPOSITORY}" \
+            --to-release-image="${LOCAL_REGISTRY}/${LOCAL_REPOSITORY}:${openshift_version}-${ARCHITECTURE}" \
     && echo "INFO: Mirrored images successfully." \
     || result=1
 
     return ${result}
 }
 
+result=0
+
 sudo yum install jq -y \
 && check_install_oc \
 && clone_ocp \
-|| exit $?
+|| result=1
+
+exit ${result}

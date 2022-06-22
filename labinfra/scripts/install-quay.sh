@@ -1,12 +1,14 @@
 #!/bin/sh
 
+# https://cloud.redhat.com/blog/introducing-mirror-registry-for-red-hat-openshift
+
 set -x
 
 : "${quay_hostname:=${1}}"
 : "${registry_user:=${2}}"
 : "${registry_pwd:=${3}}"
 
-: "${quay_url:=localhost:8443}"
+: "${quay_url:=${quay_hostname}:443}"
 
 
 #
@@ -52,7 +54,7 @@ function create_quay() {
     && ${ir_install_path}/mirror-registry install \
             --initUser "${registry_user}" \
             --initPassword "${registry_pwd}" \
-            --quayHostname "${quay_hostname}" \
+            --quayHostname "${quay_hostname}:443" \
             --quayRoot "${quay_root_dir}" \
     && echo "INFO: Quay installation was successful." \
     && podman login --authfile "${mirror_pull_secret}" \

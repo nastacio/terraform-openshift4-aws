@@ -3,6 +3,7 @@ locals {
   registry_hostname     = "${var.environment_name}-registry.${var.base_domain}"
   public_lab_subnet_id  = var.public_subnet_ids[0]
   private_lab_subnet_id = var.private_subnet_ids[0]
+  rhel_pull_secret      = jsonencode(var.rhel_pull_secret)
 }
 
 
@@ -224,21 +225,21 @@ resource "aws_route53_record" "registry-dns" {
 #
 # Create registry instance in the VPC
 #
-resource "aws_network_interface" "lab_registry_nic" {
-  subnet_id = local.public_lab_subnet_id
-  # private_ip = cidrhost(local.public_lab_subnet_id.cidr_block, 1)
-  security_groups = [
-    aws_security_group.lab_ssh_sg.id,
-    aws_security_group.lab_squid_tls_sg.id
-  ]
-  attachment {
-    instance     = aws_instance.registry_instance.id
-    device_index = 1
-  }
-  tags = {
-    Name = "${var.environment_name}-registry-nic"
-  }
-}
+# resource "aws_network_interface" "lab_registry_nic" {
+#   subnet_id = local.public_lab_subnet_id
+#   # private_ip = cidrhost(local.public_lab_subnet_id.cidr_block, 1)
+#   security_groups = [
+#     aws_security_group.lab_ssh_sg.id,
+#     aws_security_group.lab_squid_tls_sg.id
+#   ]
+#   attachment {
+#     instance     = aws_instance.registry_instance.id
+#     device_index = 1
+#   }
+#   tags = {
+#     Name = "${var.environment_name}-registry-nic"
+#   }
+# }
 
 
 resource "aws_instance" "registry_instance" {
@@ -379,6 +380,12 @@ resource "aws_security_group" "vpc-nat" {
     cidr_blocks = [var.ocp_private_subnet_cidr_a]
   }
   ingress {
+    from_port   = 8443
+    to_port     = 8443
+    protocol    = "tcp"
+    cidr_blocks = [var.ocp_private_subnet_cidr_a]
+  }
+  ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
@@ -451,7 +458,7 @@ resource "null_resource" "configure_registry" {
   provisioner "remote-exec" {
     inline = [
       "chmod +x /tmp/clone-ocp-images.sh",
-      "sudo /tmp/clone-ocp-images.sh ${local.registry_hostname} ${var.registry_username} ${var.registry_password} ${var.rhel_pull_secret} ${var.openshift_version} | grep -v username | grep -v password > /tmp/clone-ocp-images.txt 2>&1",
+      "sudo /tmp/clone-ocp-images.sh ${local.registry_hostname} ${var.registry_username} ${var.registry_password} ${local.rhel_pull_secret} ${var.openshift_version} | grep -v username | grep -v password > /tmp/clone-ocp-images.txt 2>&1",
     ]
   }
 }

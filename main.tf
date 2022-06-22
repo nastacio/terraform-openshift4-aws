@@ -81,6 +81,7 @@ module "labinfra" {
   ssh_public_key    = var.ssh_public_key
   ssh_private_key   = var.ssh_private_key
   route_53_zone_id  = var.route_53_zone_id
+  openshift_version = var.openshift_version
 
   depends_on = [ module.vpc.aws_lb_api_external_dns_name ]
 }
